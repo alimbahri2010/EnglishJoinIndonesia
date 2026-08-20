@@ -1,0 +1,6 @@
+{
+  "name": "English Join Indonesia",
+  "description": "Modern, premium landing page for English Join Indonesia - English language education, conversation, and TOEFL preparation courses.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
