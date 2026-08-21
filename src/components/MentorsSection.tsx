@@ -45,7 +45,7 @@ export const MentorsSection: React.FC<MentorsSectionProps> = ({ onOpenRegister }
           {MENTORS.map((mentor) => (
             <div
               key={mentor.id}
-              className="group relative bg-[#161616] hover:bg-[#1C1C1C] border-2 border-white/10 hover:border-[#F7B425]/60 rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 shadow-2xl hover:shadow-[#F7B425]/10"
+              className="group relative bg-[#161616] hover:bg-[#1C1C1C] border border-white/10 hover:border-[#F7B425]/60 rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 shadow-2xl hover:shadow-[#F7B425]/10"
             >
               <div>
                 {/* Mentor Photo Container */}
@@ -58,20 +58,8 @@ export const MentorsSection: React.FC<MentorsSectionProps> = ({ onOpenRegister }
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
                   
-                  {/* Top Badge */}
-                  <div className="absolute top-3.5 left-3.5 z-10">
-                    <span className="px-3 py-1 rounded-full bg-black/80 backdrop-blur-md border border-[#F7B425]/40 text-[#F7B425] text-xs font-black">
-                      {mentor.badge}
-                    </span>
-                  </div>
-
-                  {/* Experience Tag at Bottom Right */}
-                  <div className="absolute bottom-3.5 right-3.5 z-10">
-                    <span className="px-2.5 py-1 rounded-lg bg-[#F7B425] text-black text-[11px] font-black flex items-center gap-1 shadow-md">
-                      <Award className="w-3.5 h-3.5" />
-                      <span>{mentor.experience}</span>
-                    </span>
-                  </div>
+                  {/* Top Badge (Hidden) */}
+                  {/* Experience Tag (Hidden) */}
                 </div>
 
                 {/* Mentor Header Info */}
@@ -99,7 +87,7 @@ export const MentorsSection: React.FC<MentorsSectionProps> = ({ onOpenRegister }
                 </p>
 
                 {/* Specialties Checklist */}
-                <div className="space-y-2 pt-4 border-t border-white/10 mb-6">
+                <div className="space-y-2 pt-4 border-t border-white/10">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                     Keahlian &amp; Fokus Bimbingan:
                   </span>
@@ -112,24 +100,12 @@ export const MentorsSection: React.FC<MentorsSectionProps> = ({ onOpenRegister }
                 </div>
               </div>
 
-              {/* Action Button */}
-              <div className="pt-2">
-                <button
-                  id={`mentor-cta-${mentor.id}`}
-                  onClick={() => onOpenRegister()}
-                  className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-white/5 hover:bg-[#F7B425] hover:text-black border border-white/15 hover:border-[#F7B425] transition-all duration-300 flex items-center justify-center gap-2 group/btn"
-                >
-                  <span>Daftar Kelas Bersama {mentor.name.split(' ')[0]}</span>
-                  <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                </button>
-              </div>
-
             </div>
           ))}
         </div>
 
         {/* Mentor Consultation Callout Banner */}
-        <div className="rounded-3xl bg-gradient-to-r from-[#1A1810] via-[#141414] to-[#1A1810] border-2 border-[#F7B425]/40 p-6 sm:p-10 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-6">
+        <div className="rounded-3xl bg-gradient-to-r from-[#1A1810] via-[#141414] to-[#1A1810] border border-[#F7B425]/40 p-6 sm:p-10 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 text-left">
             <div className="w-14 h-14 rounded-2xl bg-[#F7B425] text-black flex items-center justify-center flex-shrink-0 font-black shadow-lg shadow-[#F7B425]/20">
               <Sparkles className="w-7 h-7" />

@@ -29,9 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister, onOpenQuiz }) =>
     { name: 'Kenapa Kami', href: '#why-us' },
     { name: 'Programs', href: '#programs' },
     { name: 'Cara Belajar', href: '#learning-process' },
-    { name: 'Mentor', href: '#mentors' },
     { name: 'Testimonials', href: '#testimonials' },
-    { name: 'FAQ', href: '#faq' },
   ];
 
   return (

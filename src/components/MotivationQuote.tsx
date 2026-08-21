@@ -31,10 +31,6 @@ export const MotivationQuote: React.FC = () => {
               “ENGLISH IS NOT JUST A LANGUAGE, BUT A{' '}
               <span className="text-[#F7B425] relative inline-block">
                 PASSPORT
-                {/* SVG curve line under passport */}
-                <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 100 12" preserveAspectRatio="none">
-                  <path d="M0,8 Q50,0 100,8" fill="none" stroke="#F7B425" strokeWidth="4" />
-                </svg>
               </span>{' '}
               TO <span className="text-[#F7B425]">BIGGER OPPORTUNITIES</span>.”
             </blockquote>
@@ -73,11 +69,6 @@ export const MotivationQuote: React.FC = () => {
                   className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent" />
-                
-                {/* Floating Ribbon */}
-                <div className="absolute top-4 left-4 z-10 px-3 py-1 rounded-full bg-[#F7B425] text-black text-xs font-black uppercase tracking-wider shadow-md">
-                  Global Success & Achievements
-                </div>
 
                 <div className="absolute bottom-4 left-4 right-4 text-left z-10 bg-black/80 backdrop-blur-md p-3.5 rounded-2xl border border-white/15">
                   <div className="flex items-center gap-1.5 text-xs text-[#F7B425] font-extrabold uppercase tracking-wider mb-1">
