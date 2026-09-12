@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { MessageCircle, X, Sparkles, Send } from 'lucide-react';
-import { CONTACT_INFO } from '../data/mockData';
+import { MessageCircle, X, Send } from 'lucide-react';
+import { CONTACT_INFO } from '../../data/mockData';
 
 export const FloatingWhatsApp: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);

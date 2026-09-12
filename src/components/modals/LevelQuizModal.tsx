@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Sparkles, CheckCircle2, ArrowRight, BookOpen, MessageSquare, Award, RotateCcw } from 'lucide-react';
-import { PROGRAMS, CONTACT_INFO } from '../data/mockData';
+import { X, Sparkles, ArrowRight, Award, RotateCcw } from 'lucide-react';
+import { PROGRAMS } from '../../data/mockData';
 
 interface LevelQuizModalProps {
   isOpen: boolean;

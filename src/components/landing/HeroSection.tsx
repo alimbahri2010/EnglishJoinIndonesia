@@ -1,14 +1,18 @@
 import React from 'react';
-import { ArrowRight, MessageCircle, Sparkles } from 'lucide-react';
-import heroStudentImg from '../assets/images/regenerated_image_1787222184652.png';
-import { CONTACT_INFO } from '../data/mockData';
+import { ArrowRight, MessageCircle } from 'lucide-react';
+import heroStudentImg from '../../assets/images/regenerated_image_1787222184652.png';
+import { CONTACT_INFO } from '../../data/mockData';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface HeroSectionProps {
   onOpenRegister: () => void;
   onOpenQuiz: () => void;
+  onOpenLogin?: () => void;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenRegister, onOpenQuiz }) => {
+export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenRegister, onOpenLogin }) => {
+  const { t, language } = useLanguage();
+
   return (
     <section
       id="home"
@@ -22,7 +26,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenRegister, onOpen
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
           
-          {/* Left Column: Hero Content directly from feed11.png */}
+          {/* Left Column: Hero Content */}
           <div className="lg:col-span-6 flex flex-col items-start text-left">
             
             {/* Top Brand Pill */}
@@ -30,36 +34,39 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenRegister, onOpen
               <span className="w-2 h-2 rounded-full bg-[#F7B425] animate-ping" />
               <span className="text-[#F7B425] font-bold">English Join Indonesia</span>
               <span className="text-slate-500 hidden sm:inline">•</span>
-              <span className="text-slate-300 hidden sm:inline">Kursus Bahasa Inggris Terpercaya</span>
+              <span className="text-slate-300 hidden sm:inline">{t.hero.pillSub}</span>
             </div>
 
             {/* Main Headline */}
             <div className="mb-5 space-y-1">
               <span className="block text-3xl sm:text-4xl lg:text-5xl font-black font-heading text-white tracking-tight leading-tight">
-                Masih Bingung
+                {t.hero.title1}
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black font-heading tracking-tight leading-tight">
                 <span className="text-[#F7B425]">
-                  Cari Tempat Kursus Bahasa Inggris
+                  {t.hero.title2}
                 </span>
               </h1>
               <span className="block text-3xl sm:text-4xl lg:text-5xl font-black font-heading text-white tracking-tight leading-tight">
-                Dari Nol ?
+                {t.hero.title3}
               </span>
             </div>
 
-            {/* Sub-heading from feed11.png */}
+            {/* Sub-heading */}
             <p className="text-base sm:text-lg text-slate-200 leading-relaxed max-w-2xl mb-[10px] font-normal">
-              Atau ingin meningkatkan skor <strong className="text-[#F7B425] font-extrabold">TOEFL</strong> untuk lanjut studi, <strong className="text-white font-bold">CPNS</strong>, <strong className="text-white font-bold">BUMN</strong>, <strong className="text-white font-bold">Perusahaan Swasta</strong>, dan berbagai kebutuhan lainnya?
+              {t.hero.desc}
             </p>
 
-            {/* Callout with Handwritten 'Yuk,' accent */}
+            {/* Callout with Handwritten accent */}
             <div className="flex items-baseline gap-2 mb-8 text-slate-200 text-sm sm:text-base">
               <span className="font-handwriting text-3xl sm:text-4xl text-[#F7B425] font-bold -rotate-6 transform inline-block">
-                Yuk,
+                {language === 'id' ? 'Yuk,' : "Let's"}
               </span>
               <span>
-                Tingkatkan kemampuan Bahasa Inggrismu bersama kami di <strong className="text-[#F7B425] font-extrabold">English Join Indonesia.</strong>
+                {language === 'id' 
+                  ? 'Tingkatkan kemampuan Bahasa Inggrismu bersama kami di ' 
+                  : 'Level up your English fluency and confidence with us at '}
+                <strong className="text-[#F7B425] font-extrabold">English Join Indonesia.</strong>
               </span>
             </div>
 
@@ -67,11 +74,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenRegister, onOpen
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
               <button
                 id="hero-primary-cta"
-                onClick={onOpenRegister}
-                className="group px-8 py-4 rounded-full font-black text-base text-black bg-[#F7B425] hover:bg-[#ffbe33] shadow-xl shadow-[#F7B425]/25 hover:shadow-2xl hover:shadow-[#F7B425]/40 transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-98"
+                onClick={onOpenLogin || onOpenRegister}
+                className="relative group overflow-hidden px-8 py-4 rounded-full font-black text-base text-black bg-[#F7B425] hover:bg-[#ffbe33] shadow-xl shadow-[#F7B425]/25 hover:shadow-2xl hover:shadow-[#F7B425]/40 transition-all duration-300 flex items-center justify-center gap-2 hover:-translate-y-0.5 active:scale-95 cursor-pointer"
               >
-                <span>Daftar Sekarang</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <span className="relative z-10 flex items-center gap-2">
+                  <span>{t.hero.ctaPrimary}</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-300" />
+                </span>
+
+                {/* Glossy / Mengkilap Shimmer Reflection Sweep on Hover */}
+                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full duration-700 bg-gradient-to-r from-transparent via-white/80 to-transparent transition-transform ease-out pointer-events-none" />
+
+                {/* Ambient Top Glow Reflection */}
+                <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-t-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </button>
 
               <a
@@ -82,7 +97,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenRegister, onOpen
                 className="px-7 py-4 rounded-full font-bold text-base text-white bg-white/5 hover:bg-white/10 border border-[#F7B425]/40 hover:border-[#F7B425] transition-all duration-300 flex items-center justify-center gap-2.5"
               >
                 <MessageCircle className="w-5 h-5 text-[#F7B425]" />
-                <span>Konsultasi WA (Sir Alwi)</span>
+                <span>{t.hero.ctaWa}</span>
               </a>
             </div>
 
@@ -110,11 +125,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenRegister, onOpen
                 <div className="mt-4 grid grid-cols-2 gap-3 text-center">
                   <div className="p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
                     <span className="text-base sm:text-lg font-black text-[#F7B425]">1,500+</span>
-                    <p className="text-xs font-medium text-slate-300">Alumni Terbantu</p>
+                    <p className="text-xs font-medium text-slate-300">{t.hero.alumniCount}</p>
                   </div>
                   <div className="p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
                     <span className="text-base sm:text-lg font-black text-[#F7B425]">4.9 / 5.0 ⭐</span>
-                    <p className="text-xs font-medium text-slate-300">Rating Kepuasan</p>
+                    <p className="text-xs font-medium text-slate-300">{t.hero.ratingText}</p>
                   </div>
                 </div>
 
