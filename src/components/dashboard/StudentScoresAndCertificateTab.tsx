@@ -29,7 +29,7 @@ export const StudentScoresAndCertificateTab: React.FC = () => {
   const { isDark } = useTheme();
   const { tr } = useLanguage();
   const [selectedCert, setSelectedCert] = useState<TestHistoryRecord | null>(null);
-  const [activeFilter, setActiveFilter] = useState<'ALL' | 'TOEFL ITP' | 'TOEFL iBT'>('ALL');
+  const [activeFilter, setActiveFilter] = useState<'ALL' | 'TOEFL ITP'>('ALL');
 
   const historyRecords: TestHistoryRecord[] = [
     {
@@ -66,16 +66,16 @@ export const StudentScoresAndCertificateTab: React.FC = () => {
     },
     {
       id: 'rec-03',
-      testTitle: 'TOEFL iBT — Integrated Practice Test 1',
-      testType: 'TOEFL iBT',
+      testTitle: 'TOEFL ITP — Intensive Practice Test 03',
+      testType: 'TOEFL ITP',
       date: '15 Agu 2026, 16:00 WIB',
-      listeningScore: 26,
-      structureScore: 25,
-      readingScore: 27,
-      totalScore: 98,
-      maxScore: 120,
-      status: 'MEMENUHI TARGET',
-      certNumber: 'EJI/TOEFL-IBT/2026/0312',
+      listeningScore: 57,
+      structureScore: 59,
+      readingScore: 58,
+      totalScore: 580,
+      maxScore: 677,
+      status: 'LULUS',
+      certNumber: 'EJI/TOEFL-ITP/2026/0312',
       certIssueDate: '15 Agustus 2026',
       levelCategory: 'B2+ — Competent User',
       studentName: 'Muhammad Ihsan'
@@ -187,7 +187,7 @@ export const StudentScoresAndCertificateTab: React.FC = () => {
               <span className="text-xs text-slate-400">{tr('Paket Tes', 'Test Packages')}</span>
             </div>
             <span className={`text-[11px] block mt-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              3 ITP • 1 iBT Completed
+              {tr('4 Paket Tes ITP Selesai', '4 ITP Test Packages Completed')}
             </span>
           </div>
 
@@ -258,7 +258,7 @@ export const StudentScoresAndCertificateTab: React.FC = () => {
           <div className={`flex items-center p-1 rounded-full border self-start sm:self-auto ${
             isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'
           }`}>
-            {(['ALL', 'TOEFL ITP', 'TOEFL iBT'] as const).map((filter) => (
+            {(['ALL', 'TOEFL ITP'] as const).map((filter) => (
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}

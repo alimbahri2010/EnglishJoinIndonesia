@@ -148,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}>
                 {t.dashboard.sidebar.portalAccess}
               </span>
-              <span className={`text-xs font-black block truncate font-heading ${
+              <span className={`text-xs font-bold block truncate font-heading ${
                 isDark ? 'text-white' : 'text-slate-900'
               }`}>
                 {userRole === 'admin' ? t.dashboard.sidebar.administrator : t.dashboard.sidebar.student}
@@ -178,7 +178,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }`}
               >
                 <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-black' : isDark ? 'text-[#F7B425]' : 'text-[#D97706]'}`} />
-                {!isCollapsed && <span className="truncate">{item.label}</span>}
+                {!isCollapsed && <span className="truncate text-[12px]">{item.label}</span>}
               </button>
             );
           })}

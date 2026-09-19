@@ -79,18 +79,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onNavigateTab }) => {
   const questionBanksList: QuestionBankItem[] = useMemo(() => {
     const map = new Map<string, any>();
 
-    // 1. Base list of programs (from localStorage or standard test programs)
+    // 1. Base list of programs (from localStorage or standard test programs matching student role)
     const basePrograms = localProgramsList || [
-      ...TOEFL_PROGRAMS,
       {
-        id: 'toefl-ibt-master',
-        title: 'TOEFL iBT Academic Simulation Prep',
-        tag: 'iBT International',
-        category: 'Simulasi Akademik Global',
-        duration: '120 Menit',
-        questionCount: '80 Soal (iBT Integrated)',
-        scoreTarget: 'Target Skor 90 - 110+',
-        benefits: ['Reading & Listening Academic', 'Integrated Writing Guide', 'Skala Skor 0 - 120'],
+        id: 'toefl-pred-1',
+        title: 'TOEFL ITP — Prediction Test 02',
+        tag: 'Simulasi Resmi',
+        category: 'TOEFL ITP',
+        duration: '115 Menit',
+        questionCount: '140 Soal (L, S, R)',
+        scoreTarget: 'Skala 310 - 677',
+        benefits: ['Listening, Structure, Reading'],
         isActive: true
       }
     ];
@@ -99,30 +98,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onNavigateTab }) => {
       map.set(p.id, p);
     });
 
-    // 2. Merge TOEFL Test programs from ProgramsContext
-    if (toeflPrograms && toeflPrograms.length > 0) {
-      toeflPrograms.forEach(tp => {
-        const existing = map.get(tp.id);
-        map.set(tp.id, {
-          ...(existing || {}),
-          id: tp.id,
-          title: tp.title,
-          tag: tp.tag || 'TOEFL Test',
-          category: tp.level || 'Simulasi Tes Resmi',
-          duration: tp.duration || '115 Menit',
-          questionCount: tp.sessionCount || '140 Soal',
-          scoreTarget: tp.scoreTarget || 'Target Skor 500+',
-          benefits: tp.benefits || ['Listening, Structure, Reading'],
-          isActive: tp.isActive !== false
-        });
-      });
-    }
-
-    // 3. Transform to structured QuestionBankItem
+    // 2. Transform to structured QuestionBankItem matching student role tests only
     return Array.from(map.values())
       .filter((p: any) => {
-        const isGeneralCourse = p.id === 'prog-beginners' || p.id === 'prog-conversation';
-        if (isGeneralCourse) return false;
+        const id = (p.id || '').toLowerCase();
+        const cat = (p.category || '').toLowerCase();
+        const title = (p.title || '').toLowerCase();
+        // Strictly exclude non-test courses & bootcamps
+        if (id === 'toefl-guarantee' || id === 'toefl-fasttrack' || id === 'prog-beginners' || id === 'prog-conversation') return false;
+        if (cat.includes('intensif') || cat.includes('bootcamp') || cat.includes('short course')) return false;
+        // Strictly exclude iBT
+        if (id.includes('ibt') || title.includes('ibt') || cat.includes('ibt')) return false;
         return true;
       })
       .map((p: any): QuestionBankItem => {
@@ -263,7 +249,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onNavigateTab }) => {
       <div className={`rounded-3xl p-6 border space-y-5 ${cardBg}`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className={`text-base font-black font-heading flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <h3 className={`text-[16px] leading-[24px] font-bold font-heading flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               <span className="w-2.5 h-2.5 rounded-full bg-[#F7B425] shadow-xs shadow-[#F7B425]/50" />
               {tr('Daftar Bank Soal TOEFL (Question Bank)', 'TOEFL Question Bank List')}
               <span className="text-xs px-2 py-0.5 rounded-full bg-[#F7B425]/15 text-[#F7B425] border border-[#F7B425]/30 font-bold ml-1 font-mono">
@@ -272,8 +258,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onNavigateTab }) => {
             </h3>
             <p className={`text-xs ${subText} mt-0.5`}>
               {tr(
-                'Daftar paket bank soal TOEFL ITP & iBT aktif, sinkron langsung dengan program tes TOEFL dan bank butir soal yang terdaftar.',
-                'Active TOEFL ITP & iBT question bank packages, directly synced with TOEFL test programs and registered question items.'
+                'Daftar paket bank soal TOEFL ITP aktif, sinkron langsung dengan simulasi tes TOEFL yang tersedia untuk student.',
+                'Active TOEFL ITP question bank packages, directly synced with TOEFL tests available for students.'
               )}
             </p>
           </div>
@@ -284,7 +270,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onNavigateTab }) => {
               className="text-xs font-extrabold text-black bg-[#F7B425] hover:bg-amber-400 px-4 py-2 rounded-xl transition-all cursor-pointer shadow-md shadow-[#F7B425]/20 flex items-center gap-1.5 active:scale-95"
             >
               <FolderOpen className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>{tr('Buka Halaman Bank Soal', 'Open Question Banks Page')}</span>
+              <span className="text-[12px] font-bold">{tr('Buka Halaman Bank Soal', 'Open Question Banks Page')}</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -362,7 +348,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onNavigateTab }) => {
                   </div>
 
                   {/* Title */}
-                  <h4 className={`text-sm font-black font-heading leading-snug group-hover:text-[#F7B425] transition-colors ${
+                  <h4 className={`text-[14px] leading-[20px] font-bold font-heading group-hover:text-[#F7B425] transition-colors ${
                     isDark ? 'text-white' : 'text-slate-900'
                   }`}>
                     {qb.title}
@@ -417,7 +403,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onNavigateTab }) => {
                     title={tr(`Buka dan kelola soal ${qb.title}`, `Open and manage questions for ${qb.title}`)}
                   >
                     <FolderOpen className="w-3.5 h-3.5" />
-                    <span>{tr('Buka & Kelola Soal', 'Open & Manage Questions')}</span>
+                    <span className="text-[12px] font-bold">{tr('Buka & Kelola Soal', 'Open & Manage Questions')}</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                   </button>
                 </div>

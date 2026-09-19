@@ -246,7 +246,6 @@ export const ProgramsManagementTab: React.FC = () => {
             {[
               { id: 'all', label: 'Semua Program' },
               { id: 'Landing Page', label: 'Program Kursus Aktif (Landing Page & Login)' },
-              { id: 'TOEFL Test', label: 'Paket Ujian TOEFL' },
             ].map((cat) => {
               const count = cat.id === 'all' 
                 ? programs.length 
@@ -257,7 +256,7 @@ export const ProgramsManagementTab: React.FC = () => {
                   type="button"
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`px-3.5 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer text-[12px] ${
                     activeCategory === cat.id
                       ? 'bg-[#F7B425] text-black font-extrabold shadow-xs'
                       : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -410,7 +409,7 @@ export const ProgramsManagementTab: React.FC = () => {
                       <span className="text-[11px] font-extrabold text-[#F7B425] uppercase tracking-wider block">
                         {program.tag}
                       </span>
-                      <h3 className="text-lg font-black text-white font-heading leading-snug">
+                      <h3 className="text-lg font-bold text-white font-heading leading-snug">
                         {program.title}
                       </h3>
                     </div>

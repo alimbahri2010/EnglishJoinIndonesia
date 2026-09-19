@@ -34,24 +34,28 @@ const IBT_TOEFL_SECTIONS: SectionStructureItem[] = [
   { id: 'sec-4', name: 'Section 4: Writing Section', questionCount: 2, durationMinutes: 29 },
 ];
 
-// Extended list of Available Programs with specific question sets
+// List of Available Test Programs (matching the test simulations available in student role)
 const AVAILABLE_PROGRAMS: ToeflTestProgram[] = [
-  ...TOEFL_PROGRAMS,
   {
-    id: 'toefl-ibt-master',
-    title: 'TOEFL iBT Academic Simulation Prep',
-    tag: 'iBT International',
-    category: 'Simulasi Akademik Global',
-    duration: '120 Menit',
-    questionCount: '80 Soal (iBT Integrated)',
-    scoreTarget: 'Target Skor 90 - 110+',
-    benefits: ['Reading & Listening Academic', 'Integrated Writing Guide', 'Skala Skor 0 - 120']
+    id: 'toefl-pred-1',
+    title: 'TOEFL ITP — Prediction Test 02',
+    tag: 'Simulasi Resmi',
+    category: 'TOEFL ITP',
+    duration: '115 Menit',
+    questionCount: '140 Soal (L, S, R)',
+    scoreTarget: 'Skala 310 - 677',
+    benefits: [
+      'Section 1: Listening Comprehension (50 Soal • 35 Menit)',
+      'Section 2: Structure & Written Expression (40 Soal • 25 Menit)',
+      'Section 3: Reading Comprehension (50 Soal • 55 Menit)'
+    ],
+    isActive: true
   }
 ];
 
 // Initial questions tagged with programId
 const INITIAL_QUESTIONS: ToeflQuestion[] = [
-  // --- Program: TOEFL ITP Prediction Test (Online) [toefl-pred-1] ---
+  // --- Program: TOEFL ITP — Prediction Test 02 [toefl-pred-1] ---
   {
     id: 'q1',
     programId: 'toefl-pred-1',
@@ -237,12 +241,12 @@ const INITIAL_QUESTIONS: ToeflQuestion[] = [
     explanation: 'Paragraf awal dan tesis teks berfokus pada dampak ekonomi dari pembangunan jalur kereta api lintas benua.'
   },
 
-  // --- Program: TOEFL iBT Academic Simulation [toefl-ibt-master] ---
+  // --- Additional Practice Items [toefl-pred-1] ---
   {
     id: 'q13',
-    programId: 'toefl-ibt-master',
+    programId: 'toefl-pred-1',
     section: 'Reading',
-    part: 'Factual Information (iBT Style)',
+    part: 'Part C (Academic Reading Comprehension)',
     questionText: 'According to paragraph 2, which of the following is TRUE about hydrothermal vents?',
     options: {
       A: 'They are solely supported by sunlight penetration',
@@ -255,9 +259,9 @@ const INITIAL_QUESTIONS: ToeflQuestion[] = [
   },
   {
     id: 'q14',
-    programId: 'toefl-ibt-master',
+    programId: 'toefl-pred-1',
     section: 'Listening',
-    part: 'Campus Discussion & Pragmatic Meaning',
+    part: 'Part A (Short Dialogue)',
     questionText: '(Student): Could I possibly hand in the term paper by Monday noon instead?\n(Professor): Monday noon? Let’s just say my grading deadline is Monday 9 AM.\n(Narrator): What does the professor imply?',
     options: {
       A: 'The student can submit the paper on Tuesday.',
@@ -297,11 +301,28 @@ export const ToeflQuestionsTab: React.FC = () => {
     }
   }, [questions]);
 
-  // Available programs state with localStorage persistence
+  // Helper: check if program matches tests available in student role (ITP / Prediction simulations, no courses/bootcamps, no iBT)
+  const isStudentTestProgram = (p: ToeflTestProgram) => {
+    const id = (p.id || '').toLowerCase();
+    const title = (p.title || '').toLowerCase();
+    const cat = (p.category || '').toLowerCase();
+    if (id === 'toefl-guarantee' || id === 'toefl-fasttrack' || id === 'prog-beginners' || id === 'prog-conversation') return false;
+    if (cat.includes('intensif') || cat.includes('bootcamp') || cat.includes('short course')) return false;
+    if (id.includes('ibt') || title.includes('ibt') || cat.includes('ibt')) return false;
+    return true;
+  };
+
+  // Available programs state with localStorage persistence (strictly synchronized with student role tests)
   const [programsList, setProgramsList] = useState<ToeflTestProgram[]>(() => {
     try {
       const saved = localStorage.getItem('ej_toefl_test_programs');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const sanitized = parsed.filter(isStudentTestProgram);
+          if (sanitized.length > 0) return sanitized;
+        }
+      }
     } catch (e) {
       console.warn('Error reading programs from localStorage', e);
     }
@@ -331,50 +352,17 @@ export const ToeflQuestionsTab: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Filter ONLY test-based programs (strictly exclude non-test general English courses like Beginners & Conversation)
+  // Filter ONLY test programs that match tests available in the student role
   const testBasedPrograms = useMemo(() => {
     const map = new Map<string, ToeflTestProgram>();
 
-    // Add base test programs
-    programsList.forEach(p => {
+    // Add base test programs from programsList (only if matching student role test)
+    programsList.filter(isStudentTestProgram).forEach(p => {
       map.set(p.id, p);
     });
 
-    // Add active programs with category 'TOEFL Test' from ProgramsContext
-    if (toeflPrograms && toeflPrograms.length > 0) {
-      toeflPrograms.forEach(tp => {
-        if (!map.has(tp.id)) {
-          map.set(tp.id, {
-            id: tp.id,
-            title: tp.title,
-            tag: tp.tag || 'TOEFL Test',
-            category: tp.level || 'Simulasi Tes Resmi',
-            duration: tp.duration || '115 Menit',
-            questionCount: tp.sessionCount || '140 Soal',
-            scoreTarget: tp.scoreTarget || 'Target Skor 500+',
-            benefits: tp.benefits || ['Listening, Structure, Reading']
-          });
-        }
-      });
-    }
-
-    // Filter strictly to test-based programs
-    return Array.from(map.values()).filter(p => {
-      const isGeneralCourse = p.id === 'prog-beginners' || p.id === 'prog-conversation';
-      if (isGeneralCourse) return false;
-      const lowerCat = p.category.toLowerCase();
-      const lowerTitle = p.title.toLowerCase();
-      return (
-        p.id.startsWith('toefl-') ||
-        lowerCat.includes('tes') ||
-        lowerCat.includes('test') ||
-        lowerCat.includes('simulasi') ||
-        lowerTitle.includes('toefl') ||
-        lowerTitle.includes('test') ||
-        lowerTitle.includes('simulasi')
-      );
-    });
-  }, [programsList, toeflPrograms]);
+    return Array.from(map.values());
+  }, [programsList]);
 
   // Automatically open program if navigated with an active program ID from Overview tab
   useEffect(() => {
@@ -473,15 +461,14 @@ export const ToeflQuestionsTab: React.FC = () => {
     return questions.filter(q => q.programId === programId).length;
   };
 
-  // Filter available programs
-  const filteredPrograms = programsList.filter(prog => {
+  // Filter available test programs matching tests in student role
+  const filteredPrograms = testBasedPrograms.filter(prog => {
     const catLower = prog.category.toLowerCase();
     const matchesCategory = selectedProgramCategory === 'all' || 
       (selectedProgramCategory === 'structure' && (catLower.includes('structure') || catLower.includes('tata bahasa'))) ||
       (selectedProgramCategory === 'listening' && (catLower.includes('listening') || catLower.includes('percakapan'))) ||
       (selectedProgramCategory === 'reading' && (catLower.includes('reading') || catLower.includes('bacaan'))) ||
-      (selectedProgramCategory === 'simulasi' && catLower.includes('simulasi')) ||
-      (selectedProgramCategory === 'intensif' && catLower.includes('intensif'));
+      (selectedProgramCategory === 'simulasi' && (catLower.includes('simulasi') || catLower.includes('itp') || catLower.includes('resmi')));
     
     const matchesSearch = prog.title.toLowerCase().includes(programSearchTerm.toLowerCase()) ||
       prog.category.toLowerCase().includes(programSearchTerm.toLowerCase()) ||
@@ -674,33 +661,18 @@ export const ToeflQuestionsTab: React.FC = () => {
     }));
   };
 
-  const handleLoadSectionPreset = (preset: 'itp' | 'ibt') => {
-    if (preset === 'itp') {
-      setProgramFormData(prev => ({
-        ...prev,
-        category: 'TOEFL ITP',
-        duration: '115 Menit',
-        scoreTarget: 'Skala 310 - 677',
-        sections: [
-          { id: 'sec-1', name: 'Section 1: Listening Comprehension', questionCount: 50, durationMinutes: 35 },
-          { id: 'sec-2', name: 'Section 2: Structure & Written Expression', questionCount: 40, durationMinutes: 25 },
-          { id: 'sec-3', name: 'Section 3: Reading Comprehension', questionCount: 50, durationMinutes: 55 },
-        ]
-      }));
-    } else {
-      setProgramFormData(prev => ({
-        ...prev,
-        category: 'TOEFL iBT',
-        duration: '120 Menit',
-        scoreTarget: 'Skala 0 - 120 (iBT)',
-        sections: [
-          { id: 'sec-1', name: 'Section 1: Reading Academic', questionCount: 20, durationMinutes: 35 },
-          { id: 'sec-2', name: 'Section 2: Listening Academic', questionCount: 28, durationMinutes: 36 },
-          { id: 'sec-3', name: 'Section 3: Speaking Section', questionCount: 4, durationMinutes: 16 },
-          { id: 'sec-4', name: 'Section 4: Writing Section', questionCount: 2, durationMinutes: 29 },
-        ]
-      }));
-    }
+  const handleLoadSectionPreset = (preset: 'itp' = 'itp') => {
+    setProgramFormData(prev => ({
+      ...prev,
+      category: 'TOEFL ITP',
+      duration: '115 Menit',
+      scoreTarget: 'Skala 310 - 677',
+      sections: [
+        { id: 'sec-1', name: 'Section 1: Listening Comprehension', questionCount: 50, durationMinutes: 35 },
+        { id: 'sec-2', name: 'Section 2: Structure & Written Expression', questionCount: 40, durationMinutes: 25 },
+        { id: 'sec-3', name: 'Section 3: Reading Comprehension', questionCount: 50, durationMinutes: 55 },
+      ]
+    }));
   };
 
   const handleSaveProgram = (e: React.FormEvent) => {
@@ -809,7 +781,7 @@ export const ToeflQuestionsTab: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className={`text-[18px] leading-[26px] font-bold font-['Poppins',sans-serif] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                <h1 className={`text-[20px] leading-[28px] font-bold font-['Poppins',sans-serif] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                   {tr('Bank Soal TOEFL per Program Tersedia', 'TOEFL Question Bank by Available Program')}
                 </h1>
               </div>
@@ -834,7 +806,7 @@ export const ToeflQuestionsTab: React.FC = () => {
                   title={tr('Tambah bank soal baru lengkap dengan konfigurasi', 'Add new question bank with full configurations')}
                 >
                   <Plus className="w-4 h-4 stroke-[3]" />
-                  <span>{tr('Tambah Bank Soal Baru', 'Add New Question Bank')}</span>
+                  <span className="text-[12px] font-bold">{tr('Tambah Bank Soal Baru', 'Add New Question Bank')}</span>
                 </button>
                 <button
                   type="button"
@@ -2053,13 +2025,6 @@ export const ToeflQuestionsTab: React.FC = () => {
                     className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-semibold cursor-pointer active:scale-95 transition-colors"
                   >
                     ⚡ TOEFL ITP (Listening, Structure, Reading)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleLoadSectionPreset('ibt')}
-                    className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-semibold cursor-pointer active:scale-95 transition-colors"
-                  >
-                    ⚡ TOEFL iBT (4 Sections)
                   </button>
                 </div>
 

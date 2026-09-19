@@ -25,7 +25,7 @@ interface TestItem {
 export const StudentTestSimulationTab: React.FC = () => {
   const { isDark } = useTheme();
   const { tr, language } = useLanguage();
-  const [selectedFilter, setSelectedFilter] = useState<'All' | 'ITP' | 'iBT'>('All');
+  const [selectedFilter, setSelectedFilter] = useState<'All' | 'ITP'>('All');
   const [testState, setTestState] = useState<'list' | 'preparation' | 'running' | 'completed'>('list');
   const [activeTest, setActiveTest] = useState<TestItem | null>(null);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -39,19 +39,92 @@ export const StudentTestSimulationTab: React.FC = () => {
   const [showFullscreenWarning, setShowFullscreenWarning] = useState(false);
   const [fullscreenEnabled, setFullscreenEnabled] = useState(false);
 
-  const [availableTests, setAvailableTests] = useState<TestItem[]>([
-    {
-      id: 'test-4',
-      title: 'TOEFL ITP — Prediction Test 02',
-      type: 'TOEFL ITP',
-      category: 'ITP',
-      status: 'NOT STARTED',
-      description: 'Diagnostic Practice Test with complete Structure, Written Expression, and Reading Comprehension.',
-      score: '—',
-      duration: '115 Menit',
-      questionsCount: 140,
+  const [availableTests, setAvailableTests] = useState<TestItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('ej_toefl_test_programs');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const valid = parsed.filter(p => {
+            const id = (p.id || '').toLowerCase();
+            const title = (p.title || '').toLowerCase();
+            const cat = (p.category || '').toLowerCase();
+            if (id === 'toefl-guarantee' || id === 'toefl-fasttrack' || id === 'prog-beginners' || id === 'prog-conversation') return false;
+            if (cat.includes('intensif') || cat.includes('bootcamp') || cat.includes('short course')) return false;
+            if (id.includes('ibt') || title.includes('ibt') || cat.includes('ibt')) return false;
+            return p.isActive !== false;
+          });
+          if (valid.length > 0) {
+            return valid.map(p => ({
+              id: p.id,
+              title: p.title,
+              type: 'TOEFL ITP' as const,
+              category: 'ITP' as const,
+              status: 'NOT STARTED' as const,
+              description: p.benefits ? p.benefits.join(' • ') : 'Diagnostic Practice Test with complete Structure, Written Expression, and Reading Comprehension.',
+              score: '—',
+              duration: p.duration || '115 Menit',
+              questionsCount: 140,
+            }));
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error loading student tests from localStorage', e);
     }
-  ]);
+    return [
+      {
+        id: 'toefl-pred-1',
+        title: 'TOEFL ITP — Prediction Test 02',
+        type: 'TOEFL ITP',
+        category: 'ITP',
+        status: 'NOT STARTED',
+        description: 'Diagnostic Practice Test with complete Structure, Written Expression, and Reading Comprehension.',
+        score: '—',
+        duration: '115 Menit',
+        questionsCount: 140,
+      }
+    ];
+  });
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const saved = localStorage.getItem('ej_toefl_test_programs');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            const valid = parsed.filter(p => {
+              const id = (p.id || '').toLowerCase();
+              const title = (p.title || '').toLowerCase();
+              const cat = (p.category || '').toLowerCase();
+              if (id === 'toefl-guarantee' || id === 'toefl-fasttrack' || id === 'prog-beginners' || id === 'prog-conversation') return false;
+              if (cat.includes('intensif') || cat.includes('bootcamp') || cat.includes('short course')) return false;
+              if (id.includes('ibt') || title.includes('ibt') || cat.includes('ibt')) return false;
+              return p.isActive !== false;
+            });
+            if (valid.length > 0) {
+              setAvailableTests(valid.map(p => ({
+                id: p.id,
+                title: p.title,
+                type: 'TOEFL ITP' as const,
+                category: 'ITP' as const,
+                status: 'NOT STARTED' as const,
+                description: p.benefits ? p.benefits.join(' • ') : 'Diagnostic Practice Test with complete Structure, Written Expression, and Reading Comprehension.',
+                score: '—',
+                duration: p.duration || '115 Menit',
+                questionsCount: 140,
+              })));
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Error reading storage in StudentTestSimulationTab', e);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const filteredTests = availableTests.filter((test) => {
     if (selectedFilter === 'All') return true;
@@ -270,17 +343,17 @@ export const StudentTestSimulationTab: React.FC = () => {
           {/* Section: Available tests */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className={`text-xl sm:text-2xl font-bold tracking-tight ${
+              <h2 className={`text-[20px] leading-[28px] font-bold tracking-tight ${
                 isDark ? 'text-white' : 'text-slate-900'
               }`}>
                 {tr('Pilihan Simulasi Tes TOEFL', 'Available tests')}
               </h2>
 
-              {/* Filter Pills (All / ITP / iBT) */}
+              {/* Filter Pills (All / ITP) */}
               <div className={`flex items-center p-1 rounded-full border ${
                 isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'
               }`}>
-                {(['All', 'ITP', 'iBT'] as const).map((filter) => (
+                {(['All', 'ITP'] as const).map((filter) => (
                   <button
                     key={filter}
                     type="button"
@@ -349,7 +422,7 @@ export const StudentTestSimulationTab: React.FC = () => {
                       </div>
 
                       {/* Test Title */}
-                      <h3 className={`text-base font-extrabold tracking-tight ${
+                      <h3 className={`text-base font-bold tracking-tight ${
                         isDark ? 'text-white' : 'text-slate-900'
                       }`}>
                         {test.title}
@@ -478,7 +551,7 @@ export const StudentTestSimulationTab: React.FC = () => {
 
             {/* Checklist Persiapan Sistem & Perangkat */}
             <div className="py-6 border-b border-inherit space-y-4">
-              <h3 className="font-extrabold text-sm uppercase tracking-wider text-[#F7B425]">
+              <h3 className="font-bold text-sm uppercase tracking-wider text-[#F7B425]">
                 {tr('Pengecekan Perangkat & Audio (Wajib)', 'Device & Audio Check (Mandatory)')}
               </h3>
 
@@ -549,9 +622,9 @@ export const StudentTestSimulationTab: React.FC = () => {
 
             {/* Tata Tertib & Peraturan Ujian */}
             <div className="py-6 space-y-3">
-              <div className="flex items-center gap-2 text-amber-500">
-                <AlertTriangle className="w-5 h-5" />
-                <h3 className="font-bold text-sm uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-[#F7B425]">
+                <AlertTriangle className="w-5 h-5 text-[#F7B425]" />
+                <h3 className="font-bold text-sm uppercase tracking-wider text-[#F7B425]">
                   {tr('Tata Tertib & Ketentuan Ujian Online', 'Online Examination Rules & Guidelines')}
                 </h3>
               </div>
