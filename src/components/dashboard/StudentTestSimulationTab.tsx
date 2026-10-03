@@ -9,6 +9,8 @@ import {
 import { SAMPLE_TOEFL_QUESTIONS } from '../../data/toeflData';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
 
 interface TestItem {
   id: string;
@@ -25,6 +27,7 @@ interface TestItem {
 export const StudentTestSimulationTab: React.FC = () => {
   const { isDark } = useTheme();
   const { tr, language } = useLanguage();
+  const { user } = useAuth();
   const [selectedFilter, setSelectedFilter] = useState<'All' | 'ITP'>('All');
   const [testState, setTestState] = useState<'list' | 'preparation' | 'running' | 'completed'>('list');
   const [activeTest, setActiveTest] = useState<TestItem | null>(null);
@@ -322,11 +325,38 @@ export const StudentTestSimulationTab: React.FC = () => {
     setUserAnswers({ ...userAnswers, [questions[currentIdx].id]: opt });
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     exitBrowserFullscreen();
     setShowSubmitConfirm(false);
     setShowFullscreenWarning(false);
     setTestState('completed');
+
+    if (user) {
+      try {
+        const studentDisplayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Student';
+        const randomNum = Math.floor(1000 + Math.random() * 9000);
+        await supabase.from('test_history_records').insert([
+          {
+            user_id: user.id,
+            test_title: activeTest?.title || 'TOEFL ITP — Official Prediction Test',
+            test_type: 'TOEFL ITP',
+            date: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB',
+            listening_score: Math.min(68, Math.max(31, Math.round(50 + (correctCount * 3)))),
+            structure_score: Math.min(68, Math.max(31, Math.round(52 + (correctCount * 3)))),
+            reading_score: Math.min(67, Math.max(31, Math.round(48 + (correctCount * 3)))),
+            total_score: scaledScore,
+            max_score: 677,
+            status: scaledScore >= 500 ? 'LULUS' : 'MEMENUHI TARGET',
+            cert_number: `EJI/TOEFL-ITP/${new Date().getFullYear()}/${randomNum}`,
+            cert_issue_date: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }),
+            level_category: scaledScore >= 600 ? 'C1 — Advanced' : scaledScore >= 550 ? 'B2 — High Intermediate' : 'B1 — Intermediate',
+            student_name: studentDisplayName
+          }
+        ]);
+      } catch (err) {
+        console.warn('Could not save test history to Supabase:', err);
+      }
+    }
   };
 
   // Calculate score

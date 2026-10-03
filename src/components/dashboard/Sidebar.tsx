@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   LayoutGrid, Users, BookOpen, Settings2, HelpCircle, 
   PlayCircle, Award, LogOut, ShieldCheck, User, GraduationCap, Building2,
-  PanelLeftClose, PanelLeftOpen
+  PanelLeftClose, PanelLeftOpen, FolderKanban
 } from 'lucide-react';
 import { UserRole } from '../../types';
 import { Logo } from '../common/Logo';
@@ -58,6 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const adminNavItems = [
     { id: 'overview', label: t.dashboard.sidebar.overview, icon: LayoutGrid },
+    { id: 'projects', label: language === 'id' ? 'Proyek Saya' : 'My Projects', icon: FolderKanban },
     { id: 'students', label: t.dashboard.sidebar.students, icon: Users },
     { id: 'programs', label: t.dashboard.sidebar.programs, icon: BookOpen },
     { id: 'mentors', label: t.dashboard.sidebar.mentors, icon: GraduationCap },
@@ -69,6 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const studentNavItems = [
     { id: 'student_test', label: t.dashboard.sidebar.studentTest, icon: PlayCircle },
     { id: 'student_scores', label: t.dashboard.sidebar.studentScores, icon: Award },
+    { id: 'projects', label: language === 'id' ? 'Proyek Saya' : 'My Projects', icon: FolderKanban },
   ];
 
   const navItems = userRole === 'admin' ? adminNavItems : studentNavItems;

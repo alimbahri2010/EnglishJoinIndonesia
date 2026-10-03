@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Award, Download, FileText, CheckCircle2, Calendar, 
   Eye, Printer, X, ShieldCheck, ArrowUpRight, BarChart3, 
@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
 import { Logo } from '../common/Logo';
 
 interface TestHistoryRecord {
@@ -28,10 +30,11 @@ interface TestHistoryRecord {
 export const StudentScoresAndCertificateTab: React.FC = () => {
   const { isDark } = useTheme();
   const { tr } = useLanguage();
+  const { user } = useAuth();
   const [selectedCert, setSelectedCert] = useState<TestHistoryRecord | null>(null);
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'TOEFL ITP'>('ALL');
 
-  const historyRecords: TestHistoryRecord[] = [
+  const defaultHistoryRecords: TestHistoryRecord[] = [
     {
       id: 'rec-01',
       testTitle: 'TOEFL ITP — Official Prediction Test 04A',
@@ -98,13 +101,83 @@ export const StudentScoresAndCertificateTab: React.FC = () => {
     }
   ];
 
-  const filteredRecords = historyRecords.filter(rec => {
+  const [records, setRecords] = useState<TestHistoryRecord[]>(defaultHistoryRecords);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let isSubscribed = true;
+    const fetchUserRecords = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('test_history_records')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!isSubscribed) return;
+
+        if (error) {
+          console.warn('Error fetching test_history_records from Supabase:', error.message);
+        } else if (data && data.length > 0) {
+          setRecords(data.map((d: any) => ({
+            id: d.id,
+            testTitle: d.test_title,
+            testType: d.test_type,
+            date: d.date,
+            listeningScore: d.listening_score,
+            structureScore: d.structure_score,
+            readingScore: d.reading_score,
+            totalScore: d.total_score,
+            maxScore: d.max_score,
+            status: d.status,
+            certNumber: d.cert_number || 'EJI/TOEFL-ITP/2026/0892',
+            certIssueDate: d.cert_issue_date || '02 September 2026',
+            levelCategory: d.level_category || 'C1 — Advanced Proficiency',
+            studentName: d.student_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Student'
+          })));
+        } else {
+          // If Supabase table is empty for this user, seed default records bound to their user_id
+          const studentDisplayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Student';
+          const toInsert = defaultHistoryRecords.map(r => ({
+            user_id: user.id,
+            test_title: r.testTitle,
+            test_type: r.testType,
+            date: r.date,
+            listening_score: r.listeningScore,
+            structure_score: r.structureScore,
+            reading_score: r.readingScore,
+            total_score: r.totalScore,
+            max_score: r.maxScore,
+            status: r.status,
+            cert_number: r.certNumber,
+            cert_issue_date: r.certIssueDate,
+            level_category: r.levelCategory,
+            student_name: studentDisplayName
+          }));
+          await supabase.from('test_history_records').insert(toInsert);
+          setRecords(defaultHistoryRecords.map(r => ({ ...r, studentName: studentDisplayName })));
+        }
+      } catch (err) {
+        console.warn('DB error:', err);
+      }
+    };
+
+    fetchUserRecords();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [user]);
+
+  const filteredRecords = records.filter(rec => {
     if (activeFilter === 'ALL') return true;
     return rec.testType === activeFilter;
   });
 
-  const highestScore = Math.max(...historyRecords.filter(r => r.testType === 'TOEFL ITP').map(r => r.totalScore));
-  const totalCompleted = historyRecords.length;
+  const highestScore = records.length > 0 
+    ? Math.max(...records.filter(r => r.testType === 'TOEFL ITP').map(r => r.totalScore), 0)
+    : 0;
+  const totalCompleted = records.length;
 
   const handleDownloadPdf = (rec: TestHistoryRecord) => {
     const fileName = `Sertifikat_TOEFL_${rec.testType.replace(/\s+/g, '_')}_${rec.certNumber.replace(/[\/]/g, '-')}.pdf`;
@@ -116,21 +189,24 @@ export const StudentScoresAndCertificateTab: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto animate-fadeIn">
+    <div className="space-y-4 max-w-7xl mx-auto animate-fadeIn">
       
       {/* 1. TOP HEADER & SUMMARY CARDS */}
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#F7B425]" />
-              <h1 className={`text-2xl sm:text-3xl font-extrabold tracking-tight font-heading ${
-                isDark ? 'text-white' : 'text-slate-900'
-              }`}>
+              <h1 
+                className={`text-2xl font-bold tracking-tight font-heading ${
+                  isDark ? 'text-white' : 'text-slate-900'
+                }`}
+                style={{ fontSize: '24px', fontWeight: 'bold' }}
+              >
                 {tr('Riwayat & Sertifikat TOEFL Online', 'TOEFL Online History & Certificates')}
               </h1>
             </div>
-            <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               {tr(
                 'Rekapitulasi lengkap nilai ujian, breakdown skor per section, dan unduhan e-sertifikat resmi berbarcode English Join Indonesia.',
                 'Complete summary of exam scores, section breakdown, and official verified e-certificates from English Join Indonesia.'
@@ -140,8 +216,8 @@ export const StudentScoresAndCertificateTab: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setSelectedCert(historyRecords[0])}
-              className="px-4 py-2.5 bg-[#F7B425] hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all shadow-lg shadow-[#F7B425]/20 flex items-center gap-2 cursor-pointer active:scale-98"
+              onClick={() => setSelectedCert(records[0] || null)}
+              className="px-3.5 py-2 bg-[#F7B425] hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl transition-all shadow-md shadow-[#F7B425]/20 flex items-center gap-1.5 cursor-pointer active:scale-98"
             >
               <Award className="w-4 h-4" />
               <span>{tr('Lihat Sertifikat Terakhir', 'View Latest Certificate')}</span>
@@ -150,88 +226,88 @@ export const StudentScoresAndCertificateTab: React.FC = () => {
         </div>
 
         {/* 3 Overview Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className={`p-5 rounded-2xl border ${
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className={`p-3.5 sm:p-4 rounded-xl border ${
             isDark ? 'bg-[#141414] border-white/10 text-white' : 'bg-white border-slate-200/90 text-slate-900 shadow-xs'
           }`}>
             <div className="flex items-center justify-between">
-              <span className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <span className={`text-[11px] font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 {tr('Skor TOEFL Tertinggi', 'Highest TOEFL Score')}
               </span>
-              <div className="w-8 h-8 rounded-lg bg-[#F7B425]/15 text-[#F7B425] flex items-center justify-center font-bold">
-                <Award className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-lg bg-[#F7B425]/15 text-[#F7B425] flex items-center justify-center font-bold">
+                <Award className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-black font-mono text-[#F7B425]">{highestScore}</span>
-              <span className="text-xs text-slate-400">/ 677 ITP</span>
+            <div className="mt-2 flex items-baseline gap-1.5">
+              <span className="text-2xl font-black font-mono text-[#F7B425]">{highestScore}</span>
+              <span className="text-[11px] text-slate-400">/ 677 ITP</span>
             </div>
-            <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
               C1 Advanced Proficiency
             </span>
           </div>
 
-          <div className={`p-5 rounded-2xl border ${
+          <div className={`p-3.5 sm:p-4 rounded-xl border ${
             isDark ? 'bg-[#141414] border-white/10 text-white' : 'bg-white border-slate-200/90 text-slate-900 shadow-xs'
           }`}>
             <div className="flex items-center justify-between">
-              <span className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <span className={`text-[11px] font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 {tr('Total Ujian Selesai', 'Total Completed Tests')}
               </span>
-              <div className="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-400 flex items-center justify-center font-bold">
-                <FileText className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-lg bg-blue-500/15 text-blue-400 flex items-center justify-center font-bold">
+                <FileText className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-black font-mono">{totalCompleted}</span>
-              <span className="text-xs text-slate-400">{tr('Paket Tes', 'Test Packages')}</span>
+            <div className="mt-2 flex items-baseline gap-1.5">
+              <span className="text-2xl font-black font-mono">{totalCompleted}</span>
+              <span className="text-[11px] text-slate-400">{tr('Paket Tes', 'Test Packages')}</span>
             </div>
-            <span className={`text-[11px] block mt-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <span className={`text-[10px] block mt-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               {tr('4 Paket Tes ITP Selesai', '4 ITP Test Packages Completed')}
             </span>
           </div>
 
-          <div className={`p-5 rounded-2xl border ${
+          <div className={`p-3.5 sm:p-4 rounded-xl border ${
             isDark ? 'bg-[#141414] border-white/10 text-white' : 'bg-white border-slate-200/90 text-slate-900 shadow-xs'
           }`}>
             <div className="flex items-center justify-between">
-              <span className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <span className={`text-[11px] font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 {tr('Sertifikat Terbit', 'Certificates Issued')}
               </span>
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center font-bold">
-                <ShieldCheck className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center font-bold">
+                <ShieldCheck className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-black font-mono text-emerald-400">{totalCompleted}</span>
-              <span className="text-xs text-slate-400">{tr('Dokumen Resmi', 'Official Documents')}</span>
+            <div className="mt-2 flex items-baseline gap-1.5">
+              <span className="text-2xl font-black font-mono text-emerald-400">{totalCompleted}</span>
+              <span className="text-[11px] text-slate-400">{tr('Dokumen Resmi', 'Official Documents')}</span>
             </div>
-            <span className={`text-[11px] block mt-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <span className={`text-[10px] block mt-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               {tr('Status: Terverifikasi Sistem', 'Status: System Verified')}
             </span>
           </div>
 
-          <div className={`p-5 rounded-2xl border ${
+          <div className={`p-3.5 sm:p-4 rounded-xl border ${
             isDark ? 'bg-[#141414] border-white/10 text-white' : 'bg-white border-slate-200/90 text-slate-900 shadow-xs'
           }`}>
             <div className="flex items-center justify-between">
-              <span className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <span className={`text-[11px] font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 {tr('Rata-rata Section ITP', 'ITP Section Averages')}
               </span>
-              <div className="w-8 h-8 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center font-bold">
-                <BarChart3 className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center font-bold">
+                <BarChart3 className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="mt-3 space-y-1">
-              <div className="flex justify-between text-[11px]">
+            <div className="mt-2 space-y-1">
+              <div className="flex justify-between text-[10px]">
                 <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Listening</span>
                 <span className="font-bold text-[#F7B425]">58/68</span>
               </div>
-              <div className="flex justify-between text-[11px]">
+              <div className="flex justify-between text-[10px]">
                 <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Structure</span>
                 <span className="font-bold text-[#F7B425]">60/68</span>
               </div>
-              <div className="flex justify-between text-[11px]">
+              <div className="flex justify-between text-[10px]">
                 <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Reading</span>
                 <span className="font-bold text-[#F7B425]">57/67</span>
               </div>
@@ -241,28 +317,28 @@ export const StudentScoresAndCertificateTab: React.FC = () => {
       </div>
 
       {/* 2. DAFTAR RIWAYAT TES & SCORE TABLE */}
-      <div className={`rounded-3xl border overflow-hidden ${
+      <div className={`rounded-2xl border overflow-hidden ${
         isDark ? 'bg-[#141414] border-white/10' : 'bg-white border-slate-200/90 shadow-sm'
       }`}>
-        <div className="p-6 border-b border-inherit flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-3.5 sm:px-5 sm:py-3 border-b border-inherit flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className={`text-lg font-black font-heading ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <h2 className={`text-sm sm:text-base font-extrabold font-heading ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {tr('Daftar Riwayat Ujian & Skor Per Section', 'Exam History & Section Scores')}
             </h2>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <p className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               {tr('Klik tombol "Sertifikat" untuk menampilkan sertifikat resmi berformat PDF.', 'Click the "Certificate" button to view and download your official certificate.')}
             </p>
           </div>
 
           {/* Filter Pills */}
-          <div className={`flex items-center p-1 rounded-full border self-start sm:self-auto ${
+          <div className={`flex items-center p-0.5 rounded-full border self-start sm:self-auto ${
             isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'
           }`}>
             {(['ALL', 'TOEFL ITP'] as const).map((filter) => (
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
                   activeFilter === filter
                     ? 'bg-[#F7B425] text-black shadow-xs font-black'
                     : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-950'
@@ -277,39 +353,39 @@ export const StudentScoresAndCertificateTab: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className={`border-b text-[11px] font-bold uppercase tracking-wider ${
+              <tr className={`border-b text-[10px] sm:text-[11px] font-bold uppercase tracking-wider ${
                 isDark 
                   ? 'border-white/10 text-slate-400 bg-white/5' 
                   : 'border-slate-200 text-slate-500 bg-slate-50/80'
               }`}>
-                <th className="py-4 px-6 font-bold">{tr('Nama Tes & Tanggal', 'Test Name & Date')}</th>
-                <th className="py-4 px-6 font-bold text-center">{tr('Tipe', 'Type')}</th>
-                <th className="py-4 px-6 font-bold text-center">Listening</th>
-                <th className="py-4 px-6 font-bold text-center">Structure</th>
-                <th className="py-4 px-6 font-bold text-center">Reading</th>
-                <th className="py-4 px-6 font-bold text-center">{tr('Total Skor', 'Total Score')}</th>
-                <th className="py-4 px-6 font-bold text-center">{tr('Status', 'Status')}</th>
-                <th className="py-4 px-6 font-bold text-right">{tr('E-Sertifikat', 'E-Certificate')}</th>
+                <th className="py-2.5 px-3.5 sm:px-4 font-bold">{tr('Nama Tes & Tanggal', 'Test Name & Date')}</th>
+                <th className="py-2.5 px-3 font-bold text-center">{tr('Tipe', 'Type')}</th>
+                <th className="py-2.5 px-3 font-bold text-center">Listening</th>
+                <th className="py-2.5 px-3 font-bold text-center">Structure</th>
+                <th className="py-2.5 px-3 font-bold text-center">Reading</th>
+                <th className="py-2.5 px-3 font-bold text-center">{tr('Total Skor', 'Total Score')}</th>
+                <th className="py-2.5 px-3 font-bold text-center">{tr('Status', 'Status')}</th>
+                <th className="py-2.5 px-3.5 sm:px-4 font-bold text-right">{tr('E-Sertifikat', 'E-Certificate')}</th>
               </tr>
             </thead>
             <tbody className={`divide-y ${isDark ? 'divide-white/5' : 'divide-slate-100'}`}>
               {filteredRecords.map((rec) => (
                 <tr key={rec.id} className={`transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
                   {/* Test Info */}
-                  <td className="py-4 px-6">
-                    <div className="font-extrabold text-sm text-inherit">
+                  <td className="py-2.5 px-3.5 sm:px-4">
+                    <div className="font-bold text-xs sm:text-sm text-inherit">
                       {rec.testTitle}
                     </div>
-                    <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
-                      <Calendar className="w-3.5 h-3.5 text-[#F7B425]" />
+                    <div className="flex items-center gap-2 mt-0.5 text-[10px] sm:text-[11px] text-slate-400">
+                      <Calendar className="w-3 h-3 text-[#F7B425]" />
                       <span>{rec.date}</span>
                       <span>• No. {rec.certNumber}</span>
                     </div>
                   </td>
 
                   {/* Type */}
-                  <td className="py-4 px-6 text-center">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                  <td className="py-2.5 px-3 text-center">
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase ${
                       rec.testType === 'TOEFL ITP'
                         ? 'bg-blue-500/15 text-blue-500 border border-blue-500/30'
                         : 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
@@ -319,59 +395,59 @@ export const StudentScoresAndCertificateTab: React.FC = () => {
                   </td>
 
                   {/* Section Scores */}
-                  <td className="py-4 px-6 text-center font-mono font-bold text-sm">
+                  <td className="py-2.5 px-3 text-center font-mono font-bold text-xs sm:text-sm">
                     {rec.listeningScore}
                   </td>
-                  <td className="py-4 px-6 text-center font-mono font-bold text-sm">
+                  <td className="py-2.5 px-3 text-center font-mono font-bold text-xs sm:text-sm">
                     {rec.structureScore}
                   </td>
-                  <td className="py-4 px-6 text-center font-mono font-bold text-sm">
+                  <td className="py-2.5 px-3 text-center font-mono font-bold text-xs sm:text-sm">
                     {rec.readingScore}
                   </td>
 
                   {/* Total Score Badge */}
-                  <td className="py-4 px-6 text-center">
+                  <td className="py-2.5 px-3 text-center">
                     <div className="inline-flex flex-col items-center">
-                      <span className="px-3 py-1 rounded-xl bg-[#F7B425] text-black font-black font-mono text-sm shadow-sm">
+                      <span className="px-2.5 py-0.5 rounded-lg bg-[#F7B425] text-black font-black font-mono text-xs sm:text-sm shadow-xs">
                         {rec.totalScore}
                       </span>
-                      <span className="text-[10px] text-slate-400 mt-0.5">
+                      <span className="text-[9px] text-slate-400 mt-0.5">
                         {tr('dari', 'of')} {rec.maxScore}
                       </span>
                     </div>
                   </td>
 
                   {/* Status */}
-                  <td className="py-4 px-6 text-center">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                  <td className="py-2.5 px-3 text-center">
+                    <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
                       {rec.status === 'LULUS' ? tr('LULUS', 'PASSED') : rec.status === 'MEMENUHI TARGET' ? tr('MEMENUHI TARGET', 'MET TARGET') : tr('PERLU PERBAIKAN', 'NEEDS IMPROVEMENT')}
                     </span>
                   </td>
 
                   {/* Actions */}
-                  <td className="py-4 px-6 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="py-2.5 px-3.5 sm:px-4 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
                       <button
                         type="button"
                         onClick={() => setSelectedCert(rec)}
-                        className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
+                        className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] sm:text-xs flex items-center gap-1 transition-all shadow-xs cursor-pointer active:scale-95"
                         title={tr('Lihat Pratinjau Sertifikat', 'View Certificate Preview')}
                       >
-                        <Eye className="w-3.5 h-3.5" />
+                        <Eye className="w-3 h-3" />
                         <span>{tr('Sertifikat', 'Certificate')}</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleDownloadPdf(rec)}
-                        className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
+                        className={`p-1 rounded-lg border transition-all cursor-pointer ${
                           isDark 
                             ? 'border-white/10 hover:bg-white/10 text-slate-300' 
                             : 'border-slate-300 hover:bg-slate-100 text-slate-700'
                         }`}
                         title={tr('Unduh E-Certificate PDF', 'Download E-Certificate PDF')}
                       >
-                        <Download className="w-4 h-4" />
+                        <Download className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </td>

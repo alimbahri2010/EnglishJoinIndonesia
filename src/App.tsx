@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
 import { HeroSection } from './components/landing/HeroSection';
@@ -19,21 +19,45 @@ import { CtaSection } from './components/landing/CtaSection';
 import { LevelQuizModal } from './components/modals/LevelQuizModal';
 import { FloatingWhatsApp } from './components/common/FloatingWhatsApp';
 import { AdminDashboard } from './components/dashboard/AdminDashboard';
-import { LoginPage } from './components/auth/LoginPage';
-import { UserRole } from './types';
+import { AuthPage, AuthMode } from './components/auth/AuthPage';
 import { ProgramsProvider } from './context/ProgramsContext';
 import { MentorsProvider } from './context/MentorsContext';
 import { CampusLogosProvider } from './context/CampusLogosContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 function AppContent() {
-  const [viewMode, setViewMode] = useState<'landing' | 'login' | 'dashboard'>('landing');
-  const [userRole, setUserRole] = useState<UserRole>('admin');
+  const { user, role, loading, signOut } = useAuth();
+  const [currentPath, setCurrentPath] = useState<string>(() => {
+    return typeof window !== 'undefined' ? window.location.pathname : '/';
+  });
   const [isQuizOpen, setIsQuizOpen] = useState(false);
 
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigate = (path: string) => {
+    if (typeof window !== 'undefined') {
+      if (window.location.pathname !== path) {
+        window.history.pushState(null, '', path);
+      }
+      setCurrentPath(path);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const handleOpenRegister = () => {
-    setViewMode('login');
+    navigate('/sign-up');
+  };
+
+  const handleOpenLogin = () => {
+    navigate('/sign-in');
   };
 
   const handleOpenQuiz = () => {
@@ -42,49 +66,104 @@ function AppContent() {
 
   const handleSelectFromQuiz = () => {
     setIsQuizOpen(false);
-    setViewMode('login');
+    navigate('/sign-up');
   };
 
-  const handleLoginSuccess = (role: UserRole) => {
-    setUserRole(role);
-    setViewMode('dashboard');
+  const handleSignOutAndExit = async () => {
+    await signOut();
+    navigate('/');
   };
 
-  // If Login page is active, render dedicated Login view
-  if (viewMode === 'login') {
+  // 1. Loading state while Supabase session initialises (prevents signed-out flash)
+  if (loading) {
     return (
-      <LoginPage 
-        onLoginSuccess={handleLoginSuccess}
-        onBackToLanding={() => setViewMode('landing')}
+      <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center text-slate-100">
+        <div className="w-9 h-9 border-3 border-[#F7B425] border-t-transparent rounded-full animate-spin mb-4" />
+        <span className="text-xs font-bold tracking-wider uppercase text-slate-400">
+          English Join Indonesia
+        </span>
+      </div>
+    );
+  }
+
+  // 2. Specific Auth Routes
+  if (currentPath === '/sign-in') {
+    if (user) {
+      navigate('/dashboard');
+      return null;
+    }
+    return (
+      <AuthPage 
+        initialMode="sign-in" 
+        onNavigate={navigate} 
+        onSuccessRedirect={() => navigate('/dashboard')}
       />
     );
   }
 
-  // If Dashboard mode is active, render full standalone Admin / Student Dashboard view
-  if (viewMode === 'dashboard') {
+  if (currentPath === '/sign-up') {
+    if (user) {
+      navigate('/dashboard');
+      return null;
+    }
+    return (
+      <AuthPage 
+        initialMode="sign-up" 
+        onNavigate={navigate} 
+        onSuccessRedirect={() => navigate('/dashboard')}
+      />
+    );
+  }
+
+  if (currentPath === '/forgot-password') {
+    return (
+      <AuthPage 
+        initialMode="forgot-password" 
+        onNavigate={navigate}
+      />
+    );
+  }
+
+  if (currentPath === '/update-password') {
+    return (
+      <AuthPage 
+        initialMode="update-password" 
+        onNavigate={navigate}
+        onSuccessRedirect={() => navigate('/dashboard')}
+      />
+    );
+  }
+
+  // 3. Protected Dashboard Area
+  if (currentPath === '/dashboard') {
+    if (!user) {
+      navigate('/sign-in');
+      return null;
+    }
     return (
       <AdminDashboard 
-        initialRole={userRole}
-        onExit={() => setViewMode('landing')} 
+        initialRole={role}
+        onExit={handleSignOutAndExit} 
       />
     );
   }
 
+  // 4. Public Landing Site (Default)
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-slate-100 font-sans selection:bg-[#F7B425] selection:text-black">
       {/* Sticky Navigation Bar */}
       <Navbar
         onOpenRegister={handleOpenRegister}
         onOpenQuiz={handleOpenQuiz}
-        onOpenLogin={() => setViewMode('login')}
+        onOpenLogin={user ? () => navigate('/dashboard') : handleOpenLogin}
       />
 
       <main>
         {/* 2. Hero Section */}
         <HeroSection
-          onOpenRegister={() => setViewMode('login')}
+          onOpenRegister={handleOpenRegister}
           onOpenQuiz={handleOpenQuiz}
-          onOpenLogin={() => setViewMode('login')}
+          onOpenLogin={user ? () => navigate('/dashboard') : handleOpenLogin}
         />
 
         {/* Carousel Logo Kampus Alumni */}
@@ -92,7 +171,7 @@ function AppContent() {
 
         {/* 3. Why Choose English Join Indonesia */}
         <WhyChooseUs
-          onOpenRegister={() => handleOpenRegister()}
+          onOpenRegister={handleOpenRegister}
         />
 
         {/* 4. Programs Section */}
@@ -105,7 +184,7 @@ function AppContent() {
 
         {/* 6. Learning Process Section */}
         <LearningProcess
-          onOpenRegister={() => handleOpenRegister()}
+          onOpenRegister={handleOpenRegister}
         />
 
         {/* Dedicated Mentors & Instructors Section */}
@@ -121,7 +200,7 @@ function AppContent() {
 
         {/* 8. Call to Action (CTA) Section */}
         <CtaSection
-          onOpenRegister={() => handleOpenRegister()}
+          onOpenRegister={handleOpenRegister}
           onOpenQuiz={handleOpenQuiz}
         />
       </main>
@@ -129,7 +208,7 @@ function AppContent() {
       {/* 9. Footer */}
       <Footer 
         onOpenRegister={handleOpenRegister} 
-        onOpenLogin={() => setViewMode('login')}
+        onOpenLogin={user ? () => navigate('/dashboard') : handleOpenLogin}
       />
 
       {/* Floating WhatsApp Quick Action */}
@@ -149,15 +228,16 @@ export default function App() {
   return (
     <ThemeProvider>
       <LanguageProvider>
-        <ProgramsProvider>
-          <MentorsProvider>
-            <CampusLogosProvider>
-              <AppContent />
-            </CampusLogosProvider>
-          </MentorsProvider>
-        </ProgramsProvider>
+        <AuthProvider>
+          <ProgramsProvider>
+            <MentorsProvider>
+              <CampusLogosProvider>
+                <AppContent />
+              </CampusLogosProvider>
+            </MentorsProvider>
+          </ProgramsProvider>
+        </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>
   );
 }
-

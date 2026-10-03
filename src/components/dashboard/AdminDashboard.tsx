@@ -11,6 +11,7 @@ import { MentorsManagementTab } from './MentorsManagementTab';
 import { CampusLogosManagementTab } from './CampusLogosManagementTab';
 import { StudentTestSimulationTab } from './StudentTestSimulationTab';
 import { StudentScoresAndCertificateTab } from './StudentScoresAndCertificateTab';
+import { ProjectsTab } from './ProjectsTab';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -34,6 +35,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     switch (activeTab) {
       case 'overview':
         return tr('Ringkasan & Dashboard Utama', 'Overview & Main Dashboard');
+      case 'projects':
+        return tr('Proyek Saya', 'My Projects');
       case 'students':
         return tr('Tabel Data Pendaftar TOEFL Student', 'TOEFL Student Registration Data');
       case 'programs':
@@ -82,11 +85,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         />
 
         {/* MAIN BODY VIEW CONTAINER */}
-        <main className={`p-6 md:p-8 flex-1 transition-colors duration-200 ${
+        <main className={`p-3 sm:p-4 flex-1 transition-colors duration-200 ${
           isDark ? 'bg-[#0B0B0B]' : 'bg-slate-50'
         }`}>
           {activeTab === 'overview' && (
             <OverviewTab onNavigateTab={(tab) => setActiveTab(tab)} />
+          )}
+
+          {activeTab === 'projects' && (
+            <ProjectsTab />
           )}
 
           {activeTab === 'students' && (

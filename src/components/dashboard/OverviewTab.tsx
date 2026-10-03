@@ -411,25 +411,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ onNavigateTab }) => {
             ))
           )}
         </div>
-
-        {/* Bottom Banner inside Middle Section */}
-        <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg ${
-          isDark 
-            ? 'bg-gradient-to-r from-black via-[#181818] to-black border-[#F7B425]/30 text-white' 
-            : 'bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-amber-500/40 text-white'
-        }`}>
-          <div>
-            <span className="text-sm font-black block text-[#F7B425]">{tr('Kelola Pengaturan Skor TOEFL', 'Manage TOEFL Score Settings')}</span>
-            <span className="text-xs text-slate-300">{tr('Atur tabel konversi raw score 310 - 677 untuk scoring otomatis ujian online', 'Configure raw score conversion tables 310 - 677 for online automated grading')}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => onNavigateTab('score_settings')}
-            className="px-4 py-2 rounded-xl bg-[#F7B425] text-black text-xs font-extrabold hover:bg-amber-400 transition-colors cursor-pointer shadow-md shadow-[#F7B425]/20 self-start sm:self-auto flex-shrink-0"
-          >
-            {tr('Atur Skor TOEFL', 'Set TOEFL Scores')}
-          </button>
-        </div>
       </div>
 
     </div>
