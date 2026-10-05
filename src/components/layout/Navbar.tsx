@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, PhoneCall, ArrowRight, Sparkles, Globe, Sun, Moon } from 'lucide-react';
+import { Menu, X, PhoneCall, ArrowRight, Sparkles, Globe } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { LanguageToggle } from '../common/LanguageToggle';
 import { CONTACT_INFO } from '../../data/mockData';
 import { useLanguage } from '../../context/LanguageContext';
-import { useTheme } from '../../context/ThemeContext';
 
 interface NavbarProps {
   onOpenRegister: (programId?: string) => void;
@@ -16,7 +15,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister, onOpenQuiz, onOp
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
-  const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -90,32 +88,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister, onOpenQuiz, onOp
               </button>
             )}
 
-            {/* Light-Mode / Dark-Mode Toggle Button */}
-            <button
-              id="nav-theme-toggle-button"
-              type="button"
-              onClick={toggleTheme}
-              title={isDark ? (language === 'id' ? 'Beralih ke Light Mode' : 'Switch to Light Mode') : (language === 'id' ? 'Beralih ke Dark Mode' : 'Switch to Dark Mode')}
-              aria-label={isDark ? 'Light Mode' : 'Dark Mode'}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer shadow-xs ${
-                isDark
-                  ? 'bg-[#181818] border border-white/10 text-slate-200 hover:text-[#F7B425] hover:border-[#F7B425]/40'
-                  : 'bg-white border border-slate-200 text-slate-800 hover:text-amber-700 hover:border-amber-400 shadow-xs'
-              }`}
-            >
-              {isDark ? (
-                <>
-                  <Sun className="w-4 h-4 text-[#F7B425]" />
-                  <span className="font-extrabold text-[#F7B425]">Light</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="w-4 h-4 text-slate-800" />
-                  <span className="font-extrabold text-slate-800">Dark</span>
-                </>
-              )}
-            </button>
-
             {/* Language Toggle EN - ID Button matching screenshot */}
             <div id="nav-cta-button">
               <LanguageToggle />
@@ -124,20 +96,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister, onOpenQuiz, onOp
 
           {/* Mobile Menu Toggle Button */}
           <div className="flex items-center gap-2 lg:hidden">
-            {/* Mobile Theme Toggle */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label="Toggle Theme"
-              className={`p-1.5 rounded-full border text-xs transition-colors cursor-pointer ${
-                isDark
-                  ? 'bg-white/10 border-white/10 text-[#F7B425]'
-                  : 'bg-white border-slate-200 text-slate-800'
-              }`}
-            >
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-
             {/* Mobile Language Toggle */}
             <LanguageToggle size="sm" />
 
@@ -181,22 +139,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister, onOpenQuiz, onOp
             ))}
 
             <div className="pt-3 flex flex-col gap-3">
-              {/* Theme Switcher in Drawer */}
-              <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 text-xs">
-                <span className="text-slate-300 flex items-center gap-1.5 font-bold">
-                  {isDark ? <Sun className="w-4 h-4 text-[#F7B425]" /> : <Moon className="w-4 h-4 text-slate-300" />}
-                  {language === 'id' ? 'Tampilan / Tema:' : 'Theme / Display:'}
-                </span>
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  className="px-3 py-1.5 rounded-lg font-bold text-xs bg-[#F7B425] text-black flex items-center gap-1.5 shadow-xs"
-                >
-                  {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-                  <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
-                </button>
-              </div>
-
               {/* Language Switcher in Drawer */}
               <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 text-xs">
                 <span className="text-slate-300 flex items-center gap-1.5 font-bold">
