@@ -9,7 +9,7 @@ interface AuthContextType {
   role: UserRole;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signUp: (email: string, password: string, fullName?: string, role?: UserRole) => Promise<{ user: User | null; session: Session | null; error: AuthError | null }>;
+  signUp: (email: string, password: string, fullName?: string, role?: UserRole, whatsapp?: string) => Promise<{ user: User | null; session: Session | null; error: AuthError | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
   resetPasswordForEmail: (email: string) => Promise<{ error: AuthError | null }>;
   updateUserPassword: (password: string) => Promise<{ error: AuthError | null }>;
@@ -77,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName?: string, userRole: UserRole = 'student') => {
+  const signUp = async (email: string, password: string, fullName?: string, userRole: UserRole = 'student', whatsapp?: string) => {
     const siteOrigin = typeof window !== 'undefined' ? window.location.origin : '';
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -86,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         data: {
           full_name: fullName || '',
           role: userRole,
+          whatsapp: whatsapp || '',
         },
         emailRedirectTo: `${siteOrigin}/sign-in`,
       },

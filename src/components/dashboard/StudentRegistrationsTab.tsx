@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, Search, Download, Plus, MessageCircle, 
   Award, CheckCircle2, Clock, Trash2, Edit2, Filter, X
@@ -22,6 +22,97 @@ interface StudentRecord {
   certificateNumber?: string;
 }
 
+const defaultStudents: StudentRecord[] = [
+  {
+    id: 'STD-2026-001',
+    name: 'Muhammad Farhan',
+    whatsapp: '081298765432',
+    email: 'farhan.m@gmail.com',
+    programName: 'TOEFL ITP Prediction Test (Online)',
+    registrationDate: '01 Mar 2026',
+    testScore: 573,
+    listeningScore: 56,
+    structureScore: 58,
+    readingScore: 58,
+    paymentStatus: 'Paid',
+    status: 'Lulus (500+)',
+    certificateNumber: 'CERT/EJ/2026/03/089'
+  },
+  {
+    id: 'STD-2026-002',
+    name: 'Anisa Rahmawati',
+    whatsapp: '085712348899',
+    email: 'anisa.rahma@student.ac.id',
+    programName: 'TOEFL Preparation & Test (Garansi 500+)',
+    registrationDate: '28 Feb 2026',
+    testScore: 540,
+    listeningScore: 52,
+    structureScore: 55,
+    readingScore: 55,
+    paymentStatus: 'Paid',
+    status: 'Lulus (500+)',
+    certificateNumber: 'CERT/EJ/2026/02/084'
+  },
+  {
+    id: 'STD-2026-003',
+    name: 'Bagus Tri Prasetyo',
+    whatsapp: '082199887766',
+    email: 'bagus.tri@corp.id',
+    programName: 'TOEFL Fast-Track Weekend Bootcamp',
+    registrationDate: '27 Feb 2026',
+    testScore: 490,
+    listeningScore: 48,
+    structureScore: 50,
+    readingScore: 49,
+    paymentStatus: 'Paid',
+    status: 'Selesai (<500)',
+    certificateNumber: 'CERT/EJ/2026/02/079'
+  },
+  {
+    id: 'STD-2026-004',
+    name: 'Clarissa Putri',
+    whatsapp: '081344556677',
+    email: 'clarissa.p@yahoo.com',
+    programName: 'TOEFL ITP Prediction Test (Online)',
+    registrationDate: '01 Mar 2026',
+    testScore: null,
+    listeningScore: null,
+    structureScore: null,
+    readingScore: null,
+    paymentStatus: 'Paid',
+    status: 'Sedang Ujian'
+  },
+  {
+    id: 'STD-2026-005',
+    name: 'Dedi Kurniawan',
+    whatsapp: '087811223344',
+    email: 'dedi.kurnia@gmail.com',
+    programName: 'Speaking Intensive & Conversation Camp',
+    registrationDate: '26 Feb 2026',
+    testScore: null,
+    listeningScore: null,
+    structureScore: null,
+    readingScore: null,
+    paymentStatus: 'Pending',
+    status: 'Belum Mulai'
+  },
+  {
+    id: 'STD-2026-006',
+    name: 'Eka Novitasari',
+    whatsapp: '089677889900',
+    email: 'eka.novita@gmail.com',
+    programName: 'TOEFL Preparation & Test (Garansi 500+)',
+    registrationDate: '25 Feb 2026',
+    testScore: 610,
+    listeningScore: 62,
+    structureScore: 60,
+    readingScore: 61,
+    paymentStatus: 'Paid',
+    status: 'Lulus (500+)',
+    certificateNumber: 'CERT/EJ/2026/02/062'
+  }
+];
+
 export const StudentRegistrationsTab: React.FC = () => {
   const { isDark } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,97 +120,39 @@ export const StudentRegistrationsTab: React.FC = () => {
   const [selectedStudent, setSelectedStudent] = useState<StudentRecord | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Initial student dataset
-  const [students, setStudents] = useState<StudentRecord[]>([
-    {
-      id: 'STD-2026-001',
-      name: 'Muhammad Farhan',
-      whatsapp: '081298765432',
-      email: 'farhan.m@gmail.com',
-      programName: 'TOEFL ITP Prediction Test (Online)',
-      registrationDate: '01 Mar 2026',
-      testScore: 573,
-      listeningScore: 56,
-      structureScore: 58,
-      readingScore: 58,
-      paymentStatus: 'Paid',
-      status: 'Lulus (500+)',
-      certificateNumber: 'CERT/EJ/2026/03/089'
-    },
-    {
-      id: 'STD-2026-002',
-      name: 'Anisa Rahmawati',
-      whatsapp: '085712348899',
-      email: 'anisa.rahma@student.ac.id',
-      programName: 'TOEFL Preparation & Test (Garansi 500+)',
-      registrationDate: '28 Feb 2026',
-      testScore: 540,
-      listeningScore: 52,
-      structureScore: 55,
-      readingScore: 55,
-      paymentStatus: 'Paid',
-      status: 'Lulus (500+)',
-      certificateNumber: 'CERT/EJ/2026/02/084'
-    },
-    {
-      id: 'STD-2026-003',
-      name: 'Bagus Tri Prasetyo',
-      whatsapp: '082199887766',
-      email: 'bagus.tri@corp.id',
-      programName: 'TOEFL Fast-Track Weekend Bootcamp',
-      registrationDate: '27 Feb 2026',
-      testScore: 490,
-      listeningScore: 48,
-      structureScore: 50,
-      readingScore: 49,
-      paymentStatus: 'Paid',
-      status: 'Selesai (<500)',
-      certificateNumber: 'CERT/EJ/2026/02/079'
-    },
-    {
-      id: 'STD-2026-004',
-      name: 'Clarissa Putri',
-      whatsapp: '081344556677',
-      email: 'clarissa.p@yahoo.com',
-      programName: 'TOEFL ITP Prediction Test (Online)',
-      registrationDate: '01 Mar 2026',
-      testScore: null,
-      listeningScore: null,
-      structureScore: null,
-      readingScore: null,
-      paymentStatus: 'Paid',
-      status: 'Sedang Ujian'
-    },
-    {
-      id: 'STD-2026-005',
-      name: 'Dedi Kurniawan',
-      whatsapp: '087811223344',
-      email: 'dedi.kurnia@gmail.com',
-      programName: 'Speaking Intensive & Conversation Camp',
-      registrationDate: '26 Feb 2026',
-      testScore: null,
-      listeningScore: null,
-      structureScore: null,
-      readingScore: null,
-      paymentStatus: 'Pending',
-      status: 'Belum Mulai'
-    },
-    {
-      id: 'STD-2026-006',
-      name: 'Eka Novitasari',
-      whatsapp: '089677889900',
-      email: 'eka.novita@gmail.com',
-      programName: 'TOEFL Preparation & Test (Garansi 500+)',
-      registrationDate: '25 Feb 2026',
-      testScore: 610,
-      listeningScore: 62,
-      structureScore: 60,
-      readingScore: 61,
-      paymentStatus: 'Paid',
-      status: 'Lulus (500+)',
-      certificateNumber: 'CERT/EJ/2026/02/062'
+  // Initial student dataset merged with registered students
+  const [students, setStudents] = useState<StudentRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem('ej_registered_students');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return [...parsed, ...defaultStudents];
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading ej_registered_students', e);
     }
-  ]);
+    return defaultStudents;
+  });
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const saved = localStorage.getItem('ej_registered_students');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setStudents([...parsed, ...defaultStudents]);
+          }
+        }
+      } catch (e) {
+        console.warn('Error syncing ej_registered_students', e);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // New Student Form State
   const [newStudent, setNewStudent] = useState({

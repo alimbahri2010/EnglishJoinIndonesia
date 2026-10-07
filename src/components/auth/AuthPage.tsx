@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Lock, Mail, User, ShieldCheck, ArrowRight, ArrowLeft, 
-  Sparkles, CheckCircle2, Eye, EyeOff, Award, BookOpen, AlertCircle, KeyRound
+  Sparkles, CheckCircle2, Eye, EyeOff, Award, BookOpen, AlertCircle, KeyRound, Phone
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { LanguageToggle } from '../common/LanguageToggle';
@@ -29,6 +29,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [fullName, setFullName] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -97,6 +98,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       return;
     }
 
+    if (selectedRole === 'student' && !whatsapp.trim()) {
+      setErrorMessage(tr('Nomor WhatsApp wajib diisi untuk peran Siswa/Student.', 'WhatsApp number is required for Student role.'));
+      return;
+    }
+
     if (password.length < 6) {
       setErrorMessage(tr('Kata sandi minimal 6 karakter.', 'Password must be at least 6 characters.'));
       return;
@@ -104,10 +110,36 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
     setIsLoading(true);
     try {
-      const { session, error } = await signUp(email, password, fullName, selectedRole);
+      const { session, error } = await signUp(email, password, fullName, selectedRole, whatsapp.trim());
       if (error) {
         setErrorMessage(error.message);
       } else {
+        // If student role, also store into local directory for Academic Admin student table
+        if (selectedRole === 'student') {
+          try {
+            const existingRaw = localStorage.getItem('ej_registered_students');
+            const existingList = existingRaw ? JSON.parse(existingRaw) : [];
+            const newRecord = {
+              id: `STD-2026-${String(existingList.length + 7).padStart(3, '0')}`,
+              name: fullName || 'Siswa Baru',
+              whatsapp: whatsapp.trim(),
+              email: email,
+              programName: 'TOEFL ITP Prediction Test (Online)',
+              registrationDate: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
+              testScore: null,
+              listeningScore: null,
+              structureScore: null,
+              readingScore: null,
+              paymentStatus: 'Paid' as const,
+              status: 'Sedang Ujian' as const
+            };
+            localStorage.setItem('ej_registered_students', JSON.stringify([newRecord, ...existingList]));
+            window.dispatchEvent(new Event('storage'));
+          } catch (e) {
+            console.warn('Error saving student to directory', e);
+          }
+        }
+
         if (session) {
           // Automatic session granted
           setSuccessMessage(tr('Pendaftaran berhasil! Mengalihkan ke dashboard...', 'Sign up successful! Redirecting...'));
@@ -492,6 +524,28 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     </button>
                   </div>
                 </div>
+
+                {/* Form Nomor WhatsApp khusus peran Siswa/Student */}
+                {selectedRole === 'student' && (
+                  <div className="animate-fadeIn">
+                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                      {tr('Nomor WhatsApp', 'WhatsApp Number')}
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="tel"
+                        required
+                        value={whatsapp}
+                        onChange={(e) => setWhatsapp(e.target.value)}
+                        placeholder="081234567890"
+                        className="w-full bg-white/5 border border-white/15 focus:border-[#F7B425] focus:bg-white/10 text-white rounded-xl py-2.5 pl-10 pr-4 text-xs sm:text-sm transition-all outline-none font-medium placeholder:text-slate-500"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <button
                   type="submit"
